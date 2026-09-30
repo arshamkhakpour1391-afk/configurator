@@ -1,222 +1,226 @@
-# @engineerd/configurator
+# MobiCare — فروشگاه وردپرس قاب گوشی و گلس
 
-Cross-platform GitHub Action for downloading statically compiled tools (or
-archives) and adding them to the path. This has been tested on `ubuntu-latest`,
-`windows-latest`, and `macos-latest`.
+فروشگاه **واقعی و آماده تولید** بر پایه **WordPress + WooCommerce** برای فروش **قاب گوشی** و **گلس / محافظ صفحه**.
 
-This action can be used in two modes:
+- زبان اصلی: **فارسی (RTL)**
+- قالب: `theme/mobicare`
+- افزونه هسته: `plugins/mobicare-core`
+- **هیچ محصول نمونه‌ای از پیش اضافه نشده** — محصولات را خودتان وارد می‌کنید
+- مدیریت کامل از پیشخوان وردپرس / ووکامرس (دسکتاپ و موبایل)
 
-- directly providing a download URL (or a URL per-platform, using a
-  configuration matrix)
-- providing a URL template and a semver version or range to be selected from
-  GitHub releases. In this mode, the action iterates through the GitHub releases
-  to find the latest version that satisfies the version (or range) constraint,
-  constructs the download URL, and adds the tool to the path.
+---
 
-## Directly downloading tools based on URL
+## محتویات مخزن
 
-Inputs:
-
-- `name`: name your tool will be configured with (required)
-- `url`: URL to download your tool from (required)
-- `pathInArchive`: if the URL points to an archive, this field is required, and
-  points to the path of the tool to configure, relative to the archive root
-
-Examples - a cross-platform action that downloads, extracts, and adds Helm
-v3.3.0 to the path:
-
-```yaml
-jobs:
-  configurator:
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      matrix:
-        config:
-          - {
-              os: "ubuntu-latest",
-              url: "https://get.helm.sh/helm-v3.3.0-linux-amd64.tar.gz",
-              name: "h3",
-              pathInArchive: "linux-amd64/helm",
-            }
-          - {
-              os: "windows-latest",
-              url: "https://get.helm.sh/helm-v3.3.0-windows-amd64.zip",
-              name: "h3.exe",
-              pathInArchive: "windows-amd64/helm.exe",
-            }
-    steps:
-      - uses: engineerd/configurator@v0.0.9
-        with:
-          name: ${{ matrix.config.name }}
-          url: ${{ matrix.config.url }}
-          pathInArchive: ${{ matrix.config.pathInArchive }}
-      - name: Testing
-        run: |
-          h3 --help
+```
+theme/mobicare/          → قالب فروشگاهی
+plugins/mobicare-core/   → افزونه: مدل گوشی، برند، wishlist، compare، Q&A، فیلتر، پروموشن، داشبورد
+docs/                    → راهنمای نصب و مدیریت
 ```
 
-## Selecting versions from GitHub Releases
+---
 
-Inputs:
+## پیش‌نیازها
 
-- `name`: name your tool will be configured with (required)
-- `pathInArchive`: if the URL points to an archive, this field is required, and
-  points to the path of the tool to configure, relative to the archive root
-- `fromGitHubReleases`: if true, the action will attempt to get the latest
-  version from the specified repository's GitHub Releases that matches the given
-  semver version or range provided, and then construct the download URL using
-  the provided `urlTemplate`.
-- `repo`: GitHub repository of the tool. Used to list all releases and select
-  the proper version. Required if `fromGitHubReleases` is true.
-- `version`: an exact semver version or version range (specified with ^ or ~, as
-  defined and used by [NPM](https://docs.npmjs.com/about-semantic-versioning)).
-  If using semver ranges with `v0.x.x` releases, be sure to
-  [understand the semver behavior here](https://docs.npmjs.com/misc/semver#caret-ranges-123-025-004).
-  If `latest` is provided, the action will download the latest release
-  (respecting the `includePrereleases flag`), which, can break your action.
-  Required if `fromGitHubReleases` is true.
-- `token`: GitHub token used _only_ to list the GitHub releases for the supplied
-  repository. For most cases, its value should be `${{ secrets.GITHUB_TOKEN }}`.
-  Required if `fromGitHubReleases` is true.
-- `urlTemplate`: a URL template used to construct the download URL, together
-  with the desired version acquired from a GitHub release. For example,
-  `https://get.helm.sh/helm-{{version}}-linux-amd64.tar.gz` (the version
-  inserted here is the exact tag name from GitHub - check whether the tag name
-  contains any `v` before the version when constructing the URL template). Note
-  that this is [Mustache template](https://mustache.github.io/) (completely
-  separate from the GitHub Actions templating system - the template _must be_
-  `{{version}}`). Note that if the version tag has a leading `v`, a
-  `{{rawVersion}}` variable that doesn't contain the leading `v` can be used in
-  the `urlTemplate`. Required if `fromGitHubReleases` is true.
-- `includePrereleases`: if true, the action will include pre-releases when
-  selecting a version from GitHub Releases.
+| مورد | حداقل |
+|------|--------|
+| PHP | 8.0+ |
+| WordPress | 6.4+ |
+| WooCommerce | 8.0+ |
+| MySQL / MariaDB | 5.7+ / 10.3+ |
+| HTTPS | توصیه‌شده برای درگاه پرداخت |
 
-Example - a cross-platform action that selects the latest Helm version that
-satisfies the `^3.1.2` release constraint - meaning it selects any minor and
-patch update, or, in other words, the latest `v3.x.x` version:
+### افزونه‌های توصیه‌شده (اختیاری)
 
-```yaml
-jobs:
-  configurator:
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      matrix:
-        config:
-          - {
-              os: "ubuntu-latest",
-              urlTemplate: "https://get.helm.sh/helm-{{version}}-linux-amd64.tar.gz",
-              name: "h3",
-              pathInArchive: "linux-amd64/helm",
-            }
-          - {
-              os: "windows-latest",
-              urlTemplate: "https://get.helm.sh/helm-{{version}}-windows-amd64.zip",
-              name: "h3.exe",
-              pathInArchive: "windows-amd64/helm.exe",
-            }
-    steps:
-      - uses: engineerd/configurator@v0.0.9
-        with:
-          name: ${{ matrix.config.name }}
-          pathInArchive: ${{ matrix.config.pathInArchive }}
-          fromGitHubReleases: "true"
-          repo: "helm/helm"
-          version: "^v3.1.2"
-          urlTemplate: ${{ matrix.config.urlTemplate }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+- **درگاه پرداخت ایرانی** سازگار با ووکامرس (زرین‌پال، آیدی‌پی، نکست‌پی، …) — از مخزن یا فروشنده درگاه
+- **Persian WooCommerce** / بسته زبان فارسی وردپرس
+- کش: LiteSpeed Cache یا WP Super Cache
+- امنیت: Wordfence یا مشابه (اختیاری)
+- پشتیبان: UpdraftPlus
 
-      - name: Testing
-        run: |
-          h3 --help
+> درگاه پرداخت **عمداً هاردکد نشده**. از **ووکامرس → تنظیمات → پرداخت** درگاه واقعی را وصل کنید.
+
+---
+
+## نصب سریع (هاست وردپرس)
+
+### ۱) وردپرس را نصب کنید
+
+از cPanel Softaculous، یا [wordpress.org](https://wordpress.org/download/) روی هاست خود.
+
+### ۲) ووکامرس را نصب کنید
+
+پیشخوان → افزونه‌ها → افزودن → جستجوی **WooCommerce** → نصب و فعال‌سازی → ویزارد را طی کنید:
+
+- کشور: **ایران**
+- واحد پول: **تومان (IRT)** یا ریال — مطابق کسب‌وکار شما
+- برگه‌های فروشگاه / سبد / تسویه / حساب من را بسازید (خود ووکامرس می‌سازد)
+
+### ۳) قالب MobiCare را نصب کنید
+
+1. پوشه `theme/mobicare` را زیپ کنید (محتوای داخل پوشه با `style.css` در ریشه زیپ باشد)،  
+   **یا** کل پوشه را در مسیر زیر آپلود کنید:
+
+   ```
+   wp-content/themes/mobicare/
+   ```
+
+2. پیشخوان → نمایش → پوسته‌ها → **MobiCare** → فعال‌سازی
+
+### ۴) افزونه MobiCare Core را نصب کنید
+
+```
+wp-content/plugins/mobicare-core/
 ```
 
-Example - an action that selects the latest non-pre-release (as marked in the
-GitHub release) of Kind:
+پیشخوان → افزونه‌ها → **MobiCare Core** → فعال‌سازی
 
-```yaml
-jobs:
-  kind:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: engineerd/configurator@v0.0.9
-        with:
-          name: "kind"
-          fromGitHubReleases: "true"
-          repo: "kubernetes-sigs/kind"
-          urlTemplate: "https://github.com/kubernetes-sigs/kind/releases/download/{{version}}/kind-linux-amd64"
-          version: "latest"
-          token: ${{ secrets.GITHUB_TOKEN }}
+پس از فعال‌سازی به صفحه **راه‌اندازی** هدایت می‌شوید.
 
-      - name: Testing
-        run: |
-          kind --help
+### ۵) تنظیمات ضروری ووکامرس
+
+| مسیر | کار |
+|------|-----|
+| ووکامرس → تنظیمات → عمومی | کشور ایران، واحد پول، موقعیت فروشگاه |
+| ووکامرس → تنظیمات → ارسال | منطقه ارسال + نرخ (پست، پیک، ...) |
+| ووکامرس → تنظیمات → پرداخت | فعال‌سازی درگاه واقعی + پرداخت هنگام تحویل (اختیاری) |
+| ووکامرس → تنظیمات → حساب‌ها | ✅ اجازه ثبت‌نام در برگه حساب من — ورود با **ایمیل + رمز** (بدون کد SMS اجباری) |
+| ووکامرس → تنظیمات → محصولات → موجودی | مدیریت موجودی |
+
+### ۶) ظاهر و منو
+
+1. **نمایش → سفارشی‌سازی → تنظیمات MobiCare**
+   - لوگو
+   - نوار اعلان
+   - هیرو صفحه اصلی
+   - بنرها
+   - تلفن / ایمیل / شبکه‌های اجتماعی
+   - FAQ
+2. **نمایش → فهرست‌ها**: منوی اصلی را بسازید و به «منوی اصلی» و «منوی موبایل» اختصاص دهید.
+
+---
+
+## به‌عنوان ادمین چه کار کنید؟ (بدون محصول پیش‌فرض)
+
+جزئیات کامل: **[docs/ADMIN-GUIDE-FA.md](docs/ADMIN-GUIDE-FA.md)**
+
+### الف) برند و مدل گوشی (مهم)
+
+1. **محصولات → برند گوشی** → مثلاً `Apple` ، `Samsung` ، `Xiaomi`
+2. **محصولات → مدل گوشی** → مثلاً `iPhone 16 Pro Max`
+3. در ویرایش مدل، فیلد **برند گوشی** را انتخاب کنید
+
+این ساختار در «یافتن مدل گوشی» و فیلتر فروشگاه استفاده می‌شود. مدل‌های آینده را **بدون تغییر کد** اضافه کنید.
+
+### ب) دسته‌بندی محصول
+
+مثال:
+
+- قاب گوشی
+  - ضدضربه / سیلیکونی / شفاف / چرمی / MagSafe / گیمینگ / طرح‌دار
+- گلس و محافظ
+  - گلس معمولی / حریم خصوصی / مات / لنز دوربین
+
+### ج) افزودن محصول
+
+**محصولات → افزودن جدید**
+
+- عنوان و توضیحات فارسی
+- چند تصویر + گالری
+- قیمت / قیمت فروش / زمان‌بندی تخفیف
+- SKU و موجودی
+- دسته، برند محصول، **مدل گوشی سازگار** (چندتایی مجاز)
+- ویژگی‌ها: رنگ، متریال، سطح محافظت، MagSafe، نوع قاب/گلس، گارانتی
+- فیلدهای اضافه MobiCare: لینک ویدیو، متن گارانتی، مشخصات فنی
+- مرتبط / upsell / cross-sell در بخش لینک‌های محصول
+- انتشار
+
+### د) سفارش‌ها
+
+**ووکامرس → سفارش‌ها** (یا سفارش‌های HPOS): مشاهده، فیلتر، تغییر وضعیت، یادداشت، بازپرداخت.
+
+### ه) کوپن و پروموشن
+
+- **بازاریابی → کوپن‌ها**
+- **پروموشن‌ها** (منوی جدا) برای بنر/کمپین
+- نوار اعلان از **سفارشی‌سازی**
+
+### و) نظرات و پرسش‌ها
+
+- **دیدگاه‌ها** برای امتیاز ستاره‌ای ووکامرس
+- **محصولات → پرسش‌ها** برای Q&A — پاسخ و تأیید وضعیت
+
+### ز) مدیریت از موبایل
+
+- مرورگر موبایل → `yoursite.com/wp-admin`
+- یا اپ رسمی **WordPress** / **WooCommerce**
+
+منوی **MobiCare → راهنمای مدیریت** داخل پیشخوان همیشه در دسترس است.
+
+---
+
+## قابلیت‌های پیاده‌سازی‌شده
+
+| بخش | جزئیات |
+|-----|--------|
+| فروشگاه WC | سبد، تسویه، حساب، سفارش، کوپن، موجودی، ارسال — واقعی |
+| مدل گوشی | taxonomy قابل مدیریت + انتخابگر فرانت |
+| فیلتر | قیمت، موجودی، تخفیف، امتیاز، برند، مدل، رنگ، متریال، MagSafe |
+| جستجو | پیشنهاد زنده: نام، SKU، مدل، برند |
+| Wishlist / Compare | واقعی (کاربر/کوکی) |
+| نظرات | سیستم نظرات ووکامرس |
+| پرسش محصول | CPT + پاسخ ادمین + اعلان ایمیل |
+| دارک مود | طراحی‌شده (نه invert ساده) |
+| SEO | title، meta، OG، canonical، schema سازمان/سایت |
+| RTL / Vazirmatn | کامل |
+| آمار داشبورد | سفارش/فروش امروز، pending، low stock، نظرات، پرسش‌ها — **داده واقعی** |
+| محصول نمونه | **ندارد** |
+
+---
+
+## معماری
+
+- **بدون تغییر core** وردپرس یا ووکامرس
+- قالب + افزونه جدا
+- هوک‌ها و template override استاندارد WC
+- سازگاری اعلام‌شده با HPOS
+
+---
+
+## استقرار تولید (Production)
+
+1. `WP_DEBUG` را `false` کنید
+2. HTTPS اجباری
+3. پشتیبان خودکار دیتابیس + `wp-content`
+4. کش صفحه + بهینه‌سازی تصویر
+5. محدود کردن تلاش ورود
+6. درگاه پرداخت را در حالت live تست کنید با سفارش واقعی کم‌مبلغ
+7. برگه‌های حقوقی: قوانین، حریم خصوصی، مرجوعی، ارسال
+
+راهنمای کامل‌تر: [docs/INSTALLATION-FA.md](docs/INSTALLATION-FA.md)
+
+---
+
+## توسعه محلی (اختیاری)
+
+اگر Docker یا Local WP دارید:
+
+```bash
+# کپی قالب و افزونه داخل wp-content
+cp -r theme/mobicare /path/to/wp-content/themes/
+cp -r plugins/mobicare-core /path/to/wp-content/plugins/
 ```
 
-## Other examples
+سپس از پیشخوان فعال کنید.
 
-- download an executable from a given URL and move it to a folder in path with
-  the given name:
+---
 
-```yaml
-name: "Test plain file"
-on: [pull_request, push]
+## پشتیبانی ساختار چندزبانه
 
-jobs:
-  kind:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: engineerd/configurator@v0.0.9
-        with:
-          name: "kind"
-          url: "https://github.com/kubernetes-sigs/kind/releases/download/v0.8.1/kind-linux-amd64"
-      - name: Testing
-        run: |
-          kind --help
-```
+معماری با text domainهای `mobicare` و `mobicare-core` و `load_theme_textdomain` / `load_plugin_textdomain` آماده است. برای انگلیسی بعدی می‌توانید WPML یا Polylang اضافه کنید؛ فعلاً فرانت کاملاً فارسی/RTL است.
 
-- download a `.tar.gz` archive from a given URL, and move a certain file from
-  the archive directory to a folder in path, with a given name:
+---
 
-```yaml
-name: "Test .tar.gz"
-on: [pull_request, push]
+## مجوز
 
-jobs:
-  kind:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: engineerd/configurator@v0.0.9
-        with:
-          name: "h3"
-          url: "https://get.helm.sh/helm-v3.3.0-linux-amd64.tar.gz"
-          pathInArchive: "linux-amd64/helm"
-      - name: Testing
-        run: |
-          h3 --help
-```
-
-- download a `.zip` archive on Windows from a given URL, and move a certain file
-  from the archive directory to a folder in path, with a given name:
-
-```yaml
-name: "Test .zip"
-on: [pull_request, push]
-
-jobs:
-  kind:
-    runs-on: windows-latest
-    steps:
-      - uses: engineerd/configurator@v0.0.9
-        with:
-          name: "h3.exe"
-          url: "https://get.helm.sh/helm-v3.3.0-windows-amd64.zip"
-          pathInArchive: "windows-amd64/helm.exe"
-      - name: Testing
-        run: |
-          h3 --help
-```
-
-> Note: usually, Windows-specific tooling uses `.zip` archives - and the `tar`
-> utility on Windows doesn't seem to handle `.tar.gz` files properly. Note: for
-> Linux, `chmod +x` is called on the target file before moving it to the path,
-> ensuring it is executable. On Windows this is skipped.
+کد این پروژه برای استفاده در کسب‌وکار شما ارائه شده است. وردپرس و ووکامرس مجوز GPL خود را دارند.

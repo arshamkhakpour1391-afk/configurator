@@ -1,0 +1,127 @@
+/**
+ * MobiCare — Dark mode (designed, not inverted)
+ */
+
+html[data-theme="dark"],
+html.mc-dark {
+  color-scheme: dark;
+
+  --mc-bg: #0b1220;
+  --mc-bg-elevated: #111827;
+  --mc-bg-muted: #1a2332;
+  --mc-bg-inverse: #e2e8f0;
+
+  --mc-text: #e8eef7;
+  --mc-text-secondary: #b6c2d4;
+  --mc-text-muted: #8b9bb0;
+  --mc-text-inverse: #0b1220;
+
+  --mc-border: #243044;
+  --mc-border-strong: #334155;
+  --mc-ring: rgba(96, 165, 250, 0.35);
+
+  --mc-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --mc-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --mc-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+
+  --mc-primary: #3b82f6;
+  --mc-primary-hover: #60a5fa;
+  --mc-accent: #38bdf8;
+}
+
+html[data-theme="dark"] .mc-header,
+html.mc-dark .mc-header {
+  background: color-mix(in srgb, var(--mc-bg-elevated) 90%, transparent);
+}
+
+html[data-theme="dark"] .mc-announce,
+html.mc-dark .mc-announce {
+  background: #020617;
+}
+
+html[data-theme="dark"] .mc-model-card,
+html.mc-dark .mc-model-card {
+  background: linear-gradient(135deg, #020617, #1e3a5f);
+}
+
+html[data-theme="dark"] .mc-footer,
+html.mc-dark .mc-footer {
+  background: #020617;
+}
+
+html[data-theme="dark"] .mc-hero,
+html.mc-dark .mc-hero {
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(59, 130, 246, 0.18), transparent),
+    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(14, 165, 233, 0.12), transparent),
+    var(--mc-bg);
+}
+
+html[data-theme="dark"] .mc-toast,
+html.mc-dark .mc-toast {
+  background: #1e293b;
+  border: 1px solid var(--mc-border);
+}
+
+html[data-theme="dark"] .woocommerce-message,
+html.mc-dark .woocommerce-message {
+  background: #052e16;
+  border-color: #166534;
+  color: #bbf7d0;
+}
+
+html[data-theme="dark"] .woocommerce-error,
+html.mc-dark .woocommerce-error {
+  background: #450a0a;
+  border-color: #991b1b;
+  color: #fecaca;
+}
+
+html[data-theme="dark"] .woocommerce-info,
+html.mc-dark .woocommerce-info {
+  background: #172554;
+  border-color: #1e40af;
+  color: #bfdbfe;
+}
+
+html[data-theme="dark"] .mc-notice--warn,
+html.mc-dark .mc-notice--warn {
+  background: #422006;
+  border-color: #a16207;
+  color: #fde68a;
+}
+
+html[data-theme="dark"] .mc-theme-toggle__sun,
+html.mc-dark .mc-theme-toggle__sun {
+  display: inline;
+}
+
+html[data-theme="dark"] .mc-theme-toggle__moon,
+html.mc-dark .mc-theme-toggle__moon {
+  display: none;
+}
+
+html:not([data-theme="dark"]):not(.mc-dark) .mc-theme-toggle__sun {
+  display: none;
+}
+
+html:not([data-theme="dark"]):not(.mc-dark) .mc-theme-toggle__moon {
+  display: inline;
+}
+
+/* Form controls in dark */
+html[data-theme="dark"] .woocommerce form .input-text,
+html[data-theme="dark"] .woocommerce form select,
+html[data-theme="dark"] .woocommerce form textarea,
+html.mc-dark .woocommerce form .input-text,
+html.mc-dark .woocommerce form select,
+html.mc-dark .woocommerce form textarea {
+  background: var(--mc-bg-muted);
+  border-color: var(--mc-border);
+  color: var(--mc-text);
+}
+
+html[data-theme="dark"] .mc-search__form,
+html.mc-dark .mc-search__form {
+  background: var(--mc-bg-muted);
+}

@@ -1,0 +1,14 @@
+/* MobiCare Core frontend extras */
+.mc-question-form .mc-input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--mc-border, #e2e8f0);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  background: var(--mc-bg-elevated, #fff);
+}
+
+.mc-question-form__msg {
+  margin-top: 8px;
+}
