@@ -1,4 +1,3 @@
-# WordPress / OS
 .DS_Store
 Thumbs.db
 *.log
@@ -6,40 +5,26 @@ Thumbs.db
 *~
 .idea/
 .vscode/
-*.sublime-*
-
-# Node / build
 node_modules/
 npm-debug.log*
-yarn-error.log*
 .cache/
-dist/
 build/
-
-# Composer
 vendor/
-composer.lock
-
-# Environment / secrets
 .env
 .env.*
 !.env.example
 wp-config.php
 wp-config-local.php
-
-# Uploads and runtime
 uploads/
 cache/
 *.sql
 *.sql.gz
-*.zip
-
-# PHP unit / coverage
 .phpunit.result.cache
 coverage/
 .phpcs-cache
-
-# Local WordPress installs (if developed alongside)
 wordpress/
 wp/
 html/
+local-wp/
+bin/php*
+tmp/
