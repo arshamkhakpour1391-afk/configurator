@@ -10,11 +10,32 @@
 
 ---
 
+## دانلود مستقیم ZIP
+
+| فایل | لینک مستقیم |
+|------|-------------|
+| **قالب MobiCare** | [mobicare-theme.zip](https://github.com/arshamkhakpour1391-afk/configurator/raw/arena/01a0f291-configurator/downloads/mobicare-theme.zip) |
+| **افزونه Core** | [mobicare-core.zip](https://github.com/arshamkhakpour1391-afk/configurator/raw/arena/01a0f291-configurator/downloads/mobicare-core.zip) |
+| **بسته کامل** (قالب + افزونه + docs) | [mobicare-full-package.zip](https://github.com/arshamkhakpour1391-afk/configurator/raw/arena/01a0f291-configurator/downloads/mobicare-full-package.zip) |
+| **کل مخزن** | [Download ZIP of branch](https://github.com/arshamkhakpour1391-afk/configurator/archive/refs/heads/arena/01a0f291-configurator.zip) |
+
+پوشه روی گیت: [`downloads/`](https://github.com/arshamkhakpour1391-afk/configurator/tree/arena/01a0f291-configurator/downloads)
+
+### نصب از ZIP
+1. وردپرس + ووکامرس را نصب کنید  
+2. **نمایش → پوسته‌ها → افزودن → بارگذاری** → `mobicare-theme.zip`  
+3. **افزونه‌ها → افزودن → بارگذاری** → `mobicare-core.zip`  
+4. هر دو را **فعال** کنید  
+5. محصول نمونه وجود ندارد — محصولات خود را اضافه کنید  
+
+---
+
 ## محتویات مخزن
 
 ```
 theme/mobicare/          → قالب فروشگاهی
 plugins/mobicare-core/   → افزونه: مدل گوشی، برند، wishlist، compare، Q&A، فیلتر، پروموشن، داشبورد
+downloads/               → ZIPهای آماده آپلود
 docs/                    → راهنمای نصب و مدیریت
 ```
 
