@@ -30,14 +30,32 @@ export async function getTag(
   // by default, the GitHub releases API returns the first 30 releases.
   // while we haven't found a suitable release, increment the page index
   // and iterate through the results.
+  if (!owner || !repoName || repo.split("/").length !== 2) {
+    throw new Error(`"repo" must be in owner/name form, got: ${repo}`);
+  }
+
   let result: ReposGetReleaseResponseData | undefined;
   let pageIndex = 1;
+  const maxPages = 30;
   while (result === undefined) {
-    let releases = await client.repos.listReleases({
-      owner: owner,
-      repo: repoName,
-      page: pageIndex,
-    });
+    if (pageIndex > maxPages) {
+      throw new Error(
+        `cannot find suitable release for version constraint ${version} for repo ${owner}/${repo} after ${maxPages} pages`
+      );
+    }
+    let releases;
+    try {
+      releases = await client.repos.listReleases({
+        owner: owner,
+        repo: repoName,
+        page: pageIndex,
+        per_page: 100,
+      });
+    } catch (error: any) {
+      throw new Error(
+        `failed to list releases for ${owner}/${repo}: ${error.message || error}`
+      );
+    }
 
     // if result is still undefined and there are no more releases it means there are actually
     // no releases that satisty the version constrained. If this happens, throw an error.
@@ -73,24 +91,31 @@ function searchSatisfyingRelease(
   // be an issue.
   // However, given that this is an ordered array, we could explore a binary search here.
   for (let i = 0; i < releases.length; i++) {
+    if (releases[i].draft) {
+      continue;
+    }
     if (version === "latest") {
-      if (
-        (includePrereleases && releases[i].prerelease) ||
-        !releases[i].prerelease
-      ) {
-        return releases[i];
+      if (releases[i].prerelease && !includePrereleases) {
+        continue;
       }
+      return releases[i];
     }
 
     if (includePrereleases === false && releases[i].prerelease === true) {
       continue;
     }
-    if (
-      semver.satisfies(releases[i].tag_name, version, {
-        includePrerelease: includePrereleases,
-      })
-    ) {
-      return releases[i];
+    try {
+      if (
+        semver.satisfies(releases[i].tag_name, version, {
+          includePrerelease: includePrereleases,
+        })
+      ) {
+        return releases[i];
+      }
+    } catch {
+      // Tags that are not semver (nightly, latest, a date) used to throw and
+      // fail the whole lookup. Skip them.
+      continue;
     }
   }
 

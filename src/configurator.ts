@@ -81,25 +81,33 @@ export class Configurator {
         this.includePrereleases
       );
 
-      const rawVersion = tag.startsWith("v") ? tag.substr(1) : tag;
-      downloadURL = Mustache.render(this.urlTemplate, {
-        version: tag,
-        rawVersion: rawVersion,
-      });
+      const rawVersion = tag.startsWith("v") ? tag.slice(1) : tag;
+      // Mustache HTML-escapes by default, which corrupts tags that contain
+      // '&' or similar and produces a download URL that 404s.
+      downloadURL = Mustache.render(
+        this.urlTemplate,
+        {
+          version: tag,
+          rawVersion: rawVersion,
+        },
+        {},
+        { escape: (value: string) => value }
+      );
     } else {
       downloadURL = this.url;
     }
 
-    console.log(`Downloading tool from ${downloadURL}`);
+    console.log(`Downloading tool from ${stripUrlSecrets(downloadURL)}`);
     let downloadPath: string | null = null;
     let archivePath: string | null = null;
     let randomDir: string = uuidv4();
     const tempDir = path.join(os.tmpdir(), "tmp", "runner", randomDir);
     console.log(`Creating tempdir ${tempDir}`);
     await io.mkdirP(tempDir);
-    downloadPath = await tc.downloadTool(downloadURL);
+    downloadPath = await downloadWithRetry(downloadURL);
 
-    switch (getArchiveType(downloadURL)) {
+    const archiveType = getArchiveType(downloadURL);
+    switch (archiveType) {
       case ArchiveType.None:
         await this.moveToPath(downloadPath);
         break;
@@ -128,6 +136,14 @@ export class Configurator {
         archivePath = await tc.extract7z(downloadPath, tempDir);
         await this.moveToPath(path.join(archivePath, this.pathInArchive));
         break;
+
+      case ArchiveType.TarBz2:
+        archivePath = await tc.extractTar(downloadPath, tempDir, "xj");
+        await this.moveToPath(path.join(archivePath, this.pathInArchive));
+        break;
+
+      default:
+        throw new Error(`Unsupported archive type for ${downloadURL}`);
     }
 
     // Clean up the tempdir when done (this step is important for self-hosted runners)
@@ -138,9 +154,12 @@ export class Configurator {
     let toolPath = binPath();
     await io.mkdirP(toolPath);
     const dest = path.join(toolPath, this.name);
-    if (!fs.existsSync(dest)) {
-      fs.moveSync(downloadPath, dest);
-    }
+    // Replacing a stale binary used to be skipped, so a second run kept the
+    // old tool and reported success. Move via a temp name so a failed replace
+    // does not delete the previous binary first.
+    const staging = `${dest}.incoming-${uuidv4()}`;
+    fs.moveSync(downloadPath, staging, { overwrite: true });
+    fs.moveSync(staging, dest, { overwrite: true });
 
     if (process.platform !== "win32") {
       await exec.exec("chmod", ["+x", path.join(toolPath, this.name)]);
@@ -167,6 +186,8 @@ export class Configurator {
     if (this.fromGitHubReleases && !matchesUrlRegex(this.urlTemplate)) {
       throw new Error(`"urlTemplate" supplied as input is not a valid URL.`);
     }
+
+    assertSafeArchivePath(this.pathInArchive);
 
     if (getArchiveType(this.url) !== ArchiveType.None && !this.pathInArchive) {
       throw new Error(
@@ -195,12 +216,20 @@ export class Configurator {
   }
 }
 
+export function archivePathname(downloadURL: string): string {
+  const noHash = downloadURL.split("#")[0];
+  const noQuery = noHash.split("?")[0];
+  return noQuery.toLowerCase();
+}
+
 export function getArchiveType(downloadURL: string): ArchiveType {
-  if (downloadURL.endsWith(ArchiveType.TarGz)) return ArchiveType.TarGz;
-  if (downloadURL.endsWith(ArchiveType.TarXz)) return ArchiveType.TarXz;
-  if (downloadURL.endsWith(ArchiveType.Tgz)) return ArchiveType.Tgz;
-  if (downloadURL.endsWith(ArchiveType.Zip)) return ArchiveType.Zip;
-  if (downloadURL.endsWith(ArchiveType.SevenZ)) return ArchiveType.SevenZ;
+  const pathname = archivePathname(downloadURL);
+  if (pathname.endsWith(ArchiveType.TarGz)) return ArchiveType.TarGz;
+  if (pathname.endsWith(ArchiveType.TarBz2)) return ArchiveType.TarBz2;
+  if (pathname.endsWith(ArchiveType.TarXz)) return ArchiveType.TarXz;
+  if (pathname.endsWith(ArchiveType.Tgz)) return ArchiveType.Tgz;
+  if (pathname.endsWith(ArchiveType.Zip)) return ArchiveType.Zip;
+  if (pathname.endsWith(ArchiveType.SevenZ)) return ArchiveType.SevenZ;
 
   return ArchiveType.None;
 }
@@ -218,12 +247,20 @@ export function binPath(): string {
     }
   }
 
-  return path.join(baseLocation, os.userInfo().username, "configurator", "bin");
+  let username = "runner";
+  try {
+    username = os.userInfo().username || username;
+  } catch {
+    username = process.env["USERNAME"] || process.env["USER"] || username;
+  }
+
+  return path.join(baseLocation, username, "configurator", "bin");
 }
 
 export enum ArchiveType {
   None = "",
   TarGz = ".tar.gz",
+  TarBz2 = ".tar.bz2",
   TarXz = ".tar.xz",
   Tgz = ".tgz",
   Zip = ".zip",
@@ -231,8 +268,50 @@ export enum ArchiveType {
 }
 
 function matchesUrlRegex(input: string): boolean {
-  var reg = new RegExp(
-    "^(http://www.|https://www.|http://|https://)?[a-z0-9]+([-.]{1}[a-z0-9]+)*.[a-z]{2,5}(:[0-9]{1,5})?(/.*)?$"
-  );
-  return reg.test(input);
+  if (!input || /\s/.test(input)) {
+    return false;
+  }
+  // Mustache placeholders are not valid URL characters. Substitute them before
+  // checking the host, but keep unusual path characters such as '<' that the
+  // historical tests use.
+  const probe = input.replace(/\{\{[#/^]?\s*[\w.]+\s*\}\}/g, "v");
+  const reg =
+    /^(https?:\/\/)([a-z0-9.-]+|\[[0-9a-f:]+\])(?::[0-9]{1,5})?(\/.*)?$/i;
+  return reg.test(probe);
+}
+
+function assertSafeArchivePath(archivePath: string) {
+  if (!archivePath) {
+    return;
+  }
+  const normalized = path.posix.normalize(archivePath.replace(/\\/g, "/"));
+  if (
+    path.isAbsolute(archivePath) ||
+    normalized === ".." ||
+    normalized.startsWith("../") ||
+    normalized.includes("/../")
+  ) {
+    throw new Error(
+      `"pathInArchive" must be a relative path inside the archive.`
+    );
+  }
+}
+
+async function downloadWithRetry(url: string, attempts = 3): Promise<string> {
+  let last: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await tc.downloadTool(url);
+    } catch (error) {
+      last = error;
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  }
+  throw last;
+}
+
+function stripUrlSecrets(url: string): string {
+  return url.replace(/([?&](?:token|access_token|sig|signature)=)[^&]+/gi, "$1***");
 }

@@ -1,0 +1,10 @@
+Windows Registry Editor Version 5.00
+
+; Raises the Windows GPU timeout from 2 seconds to 60.
+; An RX 590 training step is often longer than 2 seconds, and TDR then
+; kills the run with no Python traceback. Reboot after importing.
+; Back this key up first if you share the PC with latency-sensitive games.
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers]
+"TdrDelay"=dword:0000003c
+"TdrDdiDelay"=dword:0000003c

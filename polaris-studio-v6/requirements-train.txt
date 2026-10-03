@@ -1,0 +1,10 @@
+# Install this only when you want to train. Generation uses Forge/Comfy and does not need it.
+# Windows RX 590: install torch-directml BEFORE this file, or you will get a CUDA build that cannot see the card.
+#   pip install torch-directml
+#   pip install -r requirements-train.txt
+torch>=2.1
+diffusers>=0.27
+transformers>=4.38
+peft>=0.9
+accelerate>=0.27
+safetensors>=0.4

@@ -220,3 +220,15 @@ jobs:
 > utility on Windows doesn't seem to handle `.tar.gz` files properly. Note: for
 > Linux, `chmod +x` is called on the target file before moving it to the path,
 > ensuring it is executable. On Windows this is skipped.
+
+## Fixes in this tree
+
+These do not change the inputs above.
+
+- Download URLs with a query string (`.zip?token=`) are still recognized as archives. The token is not printed in the log.
+- A second run replaces a stale binary instead of keeping the old file and reporting success.
+- `pathInArchive` cannot climb out of the archive with `..`.
+- Mustache no longer HTML-escapes `{{version}}`, so a tag containing `&` is not corrupted.
+- Release lookup skips draft releases and non-semver tags instead of throwing, and stops after 30 pages instead of paging forever.
+- `latest` no longer falls through into `semver.satisfies`, which rejected the string `latest`.
+- Downloads retry three times. `.tar.bz2` is accepted. `os.userInfo()` failing no longer crashes path setup.

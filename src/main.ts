@@ -5,7 +5,15 @@ async function run() {
   try {
     await cfg.getConfig().configure();
   } catch (error: any) {
-    core.setFailed(error.message);
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+        ? error
+        : error && error.message
+        ? String(error.message)
+        : "configurator failed";
+    core.setFailed(message);
   }
 }
 
